@@ -4,13 +4,85 @@
 
 ### **1. 分析原始代码，确定可以拆分的部分**
 
-原始的 `matches` 函数主要由以下几个部分组成：
+原始的 `matches` 函数：
 
-- **棋盘复制**：将当前棋盘复制到临时棋盘 `next.board`。
-- **横向匹配检查**：遍历棋盘，查找横向的匹配。
-- **纵向匹配检查**：遍历棋盘，查找纵向的匹配。
-- **更新棋盘**：将匹配后的临时棋盘复制回原棋盘 `s->board`。
-- **返回结果**：返回是否有匹配发生。
+// bool matches(state* s) {
+//     if (s == NULL) {
+//         return false;
+//     }
+//     state next;
+
+//     // 复制当前棋盘到 next.board
+//     for (int j = 0; j < HEIGHT; j++) {
+//         for (int i = 0; i < WIDTH; i++) {
+//             next.board[j][i] = s->board[j][i];
+//         }
+//     }
+
+//     bool match = false;
+//     int cnt = 1;  // 初始计数为1
+
+//     // **横向匹配**
+//     for (int j = 0; j < HEIGHT; j++) {
+//         cnt = 1; // 重置计数器
+//         for (int i = 1; i < WIDTH; i++) {
+//             if (s->board[j][i] == s->board[j][i - 1] && s->board[j][i] != '.') {
+//                 cnt++;
+//             } else {
+//                 if (cnt >= 3) {
+//                     // 替换匹配的字符为 '.'
+//                     for (int k = i - cnt; k < i; k++) {
+//                         next.board[j][k] = '.';
+//                     }
+//                     match = true;
+//                 }
+//                 cnt = 1;  // 重置计数器
+//             }
+//         }
+//         // 检查行尾的匹配
+//         if (cnt >= 3) {
+//             for (int k = WIDTH - cnt; k < WIDTH; k++) {
+//                 next.board[j][k] = '.';
+//             }
+//             match = true;
+//         }
+//     }
+
+//     // **纵向匹配**
+//     for (int i = 0; i < WIDTH; i++) {
+//         cnt = 1; // 重置计数器
+//         for (int j = 1; j < HEIGHT; j++) {
+//             if (s->board[j][i] == s->board[j - 1][i] && s->board[j][i] != '.') {
+//                 cnt++;
+//             } else {
+//                 if (cnt >= 3) {
+//                     for (int k = j - cnt; k < j; k++) {
+//                         next.board[k][i] = '.';
+//                     }
+//                     match = true;
+//                 }
+//                 cnt = 1;  // 重置计数器
+//             }
+//         }
+//         // 检查列尾的匹配
+//         if (cnt >= 3) {
+//             for (int k = HEIGHT - cnt; k < HEIGHT; k++) {
+//                 next.board[k][i] = '.';
+//             }
+//             match = true;
+//         }
+//     }
+
+//     // 将 next 的棋盘复制回 s
+//     for (int j = 0; j < HEIGHT; j++) {
+//         for (int i = 0; i < WIDTH; i++) {
+//             s->board[j][i] = next.board[j][i];
+//         }
+//     }
+
+//     return match;
+// }
+
 
 ---
 
