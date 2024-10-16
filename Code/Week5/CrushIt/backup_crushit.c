@@ -328,3 +328,27 @@ void test(void) {
     // state s;
     // char str[MAX_BUFFER];
 }
+
+
+in maydefs.h
+#pragma once
+
+/* Put anything you like here, but
+   certainly your 'state' structure 
+   to hold your board e.g.*/
+#define MAXROWS 20
+#define WIDTH 5
+#define HEIGHT 6
+#define MAX_BUFFER ((MAXROWS + 2) * WIDTH + 1) 
+
+struct st {
+   char board[MAXROWS][WIDTH];
+};
+typedef struct st state;
+
+// bool read_file(const char* filename, char* buffer, int max_buffer);
+// bool process_string(const char* input, char* output) ;
+// bool fill_board(state* s, const char* str) ;
+// bool check_horizontal_matches(state* s, state* next, bool* match) ;
+// bool check_vertical_matches(state* s, state* next, bool* match) ;
+// void print_board(const state* s) ;
