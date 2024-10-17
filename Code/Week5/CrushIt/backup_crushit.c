@@ -1,5 +1,6 @@
 #include "crushit.h"
 #include "mydefs.h"
+#include <assert.h>
 
 #define MAXROWS 20
 #define WIDTH 5
@@ -98,28 +99,30 @@ bool process_string(const char* input, char* output) {
 }
 
 // 填充棋盘
-bool fill_board(state* s, const char* str) {
+bool fill_board(state* s, const char* str) { 
     if (s == NULL || str == NULL) {
         return false;
     }
 
     int len = strlen(str);
-    if (len % 5 != 0) {
+    if (len % WIDTH != 0) {
         return false; // 字符串长度不符合要求
     }
-    int index = 0;
-    for (int j = 0; j < HEIGHT; j++) {
-        for (int i = 0; i < WIDTH; i++) {
-            if (!isalpha(str[index]) && str[index] != '.') {
-            return false;
 
+    int last_line = len - WIDTH; // 指向最后一行开头
+    for (int j = HEIGHT - 1; j >= 0; j--) {
+        for (int i = 0; i < WIDTH; i++) {
+            if (!isalpha(str[last_line]) && str[last_line] != '.') {
+                return false;
             }
-            s->board[j][i] = str[index];
-            printf("board %c and in str %c\n", s->board[j][i], str[index]);
-            index++;
+            s->board[j][i] = str[last_line];
+            printf("board %c as index %d in str\n", s->board[j][i], last_line);
+            last_line++;
         }
+        last_line -= 2 * WIDTH; // 移动到上一行的开头
     }
-    return true;
+
+    return true; // 确保在函数末尾返回 true
 }
 
 bool tostring(const state* s, char* str) {
@@ -129,41 +132,52 @@ bool tostring(const state* s, char* str) {
 
     int index = 0;
     int start_row = 0;
+    int end_row = HEIGHT - 1;
 
-    // Find the first row that contains at least one non-empty block
-    while (start_row < HEIGHT) {
+    // 确定包含字母的第一个行号 `start_row`
+    for (int j = 0; j < HEIGHT; j++) {
         int found_non_empty = 0;
         for (int i = 0; i < WIDTH; i++) {
-            if (s->board[start_row][i] != '.') {
+            if (s->board[j][i] != '.') {
                 found_non_empty = 1;
                 break;
             }
         }
         if (found_non_empty) {
+            start_row = j;
             break;
         }
-        start_row++;
     }
 
-    // If the entire board is empty, return an empty string
-    if (start_row == HEIGHT) {
+    // 确定包含字母的最后一个行号 `end_row`
+    for (int j = HEIGHT - 1; j >= 0; j--) {
+        int found_non_empty = 0;
+        for (int i = 0; i < WIDTH; i++) {
+            if (s->board[j][i] != '.') {
+                found_non_empty = 1;
+                break;
+            }
+        }
+        if (found_non_empty) {
+            end_row = j;
+            break;
+        }
+    }
+
+    // 如果整个棋盘都为空，返回空字符串
+    if (start_row > end_row) {
         str[0] = '\0';
         return true;
     }
 
-    // Copy the board from the first non-empty row
-    for (int j = start_row; j < HEIGHT; j++) {
+    // 从 `start_row` 到 `end_row` 复制棋盘内容到字符串
+    for (int j = start_row; j <= end_row; j++) {
         for (int i = 0; i < WIDTH; i++) {
-            // Add '.' for empty cells, otherwise copy the character
-            if (s->board[j][i] == '.') {
-                str[index++] = '.';
-            } else {
-                str[index++] = s->board[j][i];
-            }
+            str[index++] = s->board[j][i];
         }
     }
-
-    str[index] = '\0'; // Null-terminate the string
+    str[index] = '\0'; // 添加字符串结束符
+    printf("to string %s\n", str);
     return true;
 }
 
@@ -240,21 +254,22 @@ bool matches(state* s) {
 
     bool match = false;
 
-    // 检查横向匹配
-    check_horizontal_matches(s, &next, &match);
+    // 进行“并行”匹配
+    bool horizontal_match = check_horizontal_matches(s, &next, &match);
+    bool vertical_match = check_vertical_matches(s, &next, &match);
 
-    // 检查纵向匹配
-    check_vertical_matches(s, &next, &match);
-
-    // 将 next 的棋盘复制回 s
-    for (int j = 0; j < HEIGHT; j++) {
-        for (int i = 0; i < WIDTH; i++) {
-            s->board[j][i] = next.board[j][i];
+    // 任何方向上都有匹配时，将 next 的棋盘复制回 s
+    if (horizontal_match || vertical_match) {
+        for (int j = 0; j < HEIGHT; j++) {
+            for (int i = 0; i < WIDTH; i++) {
+                s->board[j][i] = next.board[j][i];
+            }
         }
     }
 
     return match;
 }
+
 
 
 bool dropblocks(state* s) {
@@ -287,29 +302,66 @@ bool dropblocks(state* s) {
 }
 
 
-void print_board(const state* s) {
-    printf("Current board state:\n");
-    for (int j = 0; j < HEIGHT; j++) {
-        for (int i = 0; i < WIDTH; i++) {
-            printf("%c", s->board[j][i]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
+// void print_board(const state* s) {
+//     printf("Current board state:\n");
+//     for (int j = 0; j < HEIGHT; j++) {
+//         for (int i = 0; i < WIDTH; i++) {
+//             printf("%c", s->board[j][i]);
+//         }
+//         printf("\n");
+//     }
+//     printf("\n");
+// }
 
 void test(void) {
+       assert(initialise(NULL, "") == false);
+   state s;
+   assert(initialise(&s, NULL) == false);
+   // Input string too short (not a multiple of 5)
+   assert(initialise(&s, "ABCDBCDAACDAABDAABCAABCDABCDA") == false);
+   // Incorrect character '+'
+   assert(initialise(&s, "ABCDBCDAACDAABDAABCAABCDABCD+A") == false);
+
+// /*
+// BBBDB
+// CDAAC
+// DAABD
+// AABCA
+// ABCDA
+// BCAAA
+// */
+   // Well-formed string
+   assert(initialise(&s, "BBBDBCDAACDAABDAABCAABCDABCAAA") == true);
+   char str[WIDTH*MAXROWS+1];
+   assert(tostring(&s, str) == true);
+   assert(strcmp(str,    "BBBDBCDAACDAABDAABCAABCDABCAAA") == 0);
+
+   assert(matches(&s) == true);
+/*
+...DB
+CDAAC
+DAABD
+AABC.
+ABCD.
+BC...
+*/
+   assert(tostring(&s, str) == true);
+   assert(strcmp(str,    "...DBCDAACDAABDAABC.ABCD.BC...") == 0);
+
+   assert(dropblocks(&s) == true);
+/*
+after drop before to str
+
+// .....
+// CD.D.
+// DAAA.
+// AAABB
+// ABBCC
+// BCCDD
+// */
+   assert(tostring(&s, str) == true);
+   assert(strcmp(str,    "CD.D.DAAA.AAABBABBCCBCCDD") == 0 );
 }
-
-
-
-
-
-
-
-
-
-
 
 // #include <stdio.h>
 // #include <stdlib.h>
