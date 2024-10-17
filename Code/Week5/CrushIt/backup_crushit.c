@@ -34,7 +34,6 @@ bool initialise(state* s, const char* str) {
 }
 
 
-// 读取文件并存储有效字符到buffer中，不包括每行末尾的'\n'和'\0'
 bool read_file(const char* filename, char* buffer, int max_buffer) {
     if (filename == NULL || buffer == NULL) {
         return false;
@@ -46,14 +45,21 @@ bool read_file(const char* filename, char* buffer, int max_buffer) {
     }
 
     int buffer_index = 0;  // 用来跟踪 buffer 中的位置
-    char line[WIDTH + 1];  // 每行的存储空间，最多 WIDTH 个字符
+    char line[WIDTH + 2];  // 每行的存储空间，最多 WIDTH 个字符加换行符和 '\0'
 
     // 逐行读取文件并处理
     while (fgets(line, sizeof(line), file) != NULL) {
         // 去除末尾的换行符（'\n' 或 '\r'）
         int line_len = strlen(line);
         if (line[line_len - 1] == '\n' || line[line_len - 1] == '\r') {
-            line[line_len - 1] = '\0';  // 用'\0'替换掉换行符
+            line[line_len - 1] = '\0';  // 用 '\0' 替换掉换行符
+            line_len--;
+        }
+
+        // 检查行长度是否符合要求
+        if (line_len != WIDTH) {
+            fclose(file);
+            return false; // 如果行长度不等于 WIDTH，返回 false
         }
 
         // 将每行的前 WIDTH 个字符存入 buffer 中
@@ -98,7 +104,7 @@ bool fill_board(state* s, const char* str) {
     }
 
     int len = strlen(str);
-    if (len != WIDTH * HEIGHT) {
+    if (len % 5 != 0) {
         return false; // 字符串长度不符合要求
     }
     int index = 0;
@@ -116,42 +122,48 @@ bool fill_board(state* s, const char* str) {
     return true;
 }
 
-bool tostring(const state* s, char* str){
+bool tostring(const state* s, char* str) {
     if (s == NULL || str == NULL) {
         return false;
     }
+
     int index = 0;
     int start_row = 0;
 
-    // 找到第一个包含非空洞块的行
+    // Find the first row that contains at least one non-empty block
     while (start_row < HEIGHT) {
-        int i;
-        for (i = 0; i < WIDTH; i++) {
-            if(s->board[start_row][i] != '.') {
-                // 在该行找到了非空洞块
+        int found_non_empty = 0;
+        for (int i = 0; i < WIDTH; i++) {
+            if (s->board[start_row][i] != '.') {
+                found_non_empty = 1;
                 break;
             }
         }
-        if (i < WIDTH) {
-            // 找到包含非空洞块的行
+        if (found_non_empty) {
             break;
         }
         start_row++;
     }
 
-    // 如果整个棋盘都是空洞
+    // If the entire board is empty, return an empty string
     if (start_row == HEIGHT) {
         str[0] = '\0';
         return true;
     }
 
-    // 从第一个非空行开始复制
+    // Copy the board from the first non-empty row
     for (int j = start_row; j < HEIGHT; j++) {
         for (int i = 0; i < WIDTH; i++) {
-            str[index++] = s->board[j][i];
+            // Add '.' for empty cells, otherwise copy the character
+            if (s->board[j][i] == '.') {
+                str[index++] = '.';
+            } else {
+                str[index++] = s->board[j][i];
+            }
         }
     }
-    str[index] = '\0'; // 添加字符串结束符
+
+    str[index] = '\0'; // Null-terminate the string
     return true;
 }
 
@@ -288,14 +300,6 @@ void print_board(const state* s) {
 
 void test(void) {
 }
-
-
-
-
-
-
-
-
 
 
 
